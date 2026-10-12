@@ -24,11 +24,11 @@ export const authenticate = async (
       return sendError(res, 'User no longer exists.', 401);
     }
 
-    if (user.status !== 'Active') {
+    if (user.status && user.status.toLowerCase() !== 'active') {
       return sendError(res, 'Account is inactive or suspended.', 403);
     }
 
-    req.user = User.toJSON(user);
+    req.user = User.toPublicResponse(user);
     next();
   } catch {
     return sendError(res, 'Invalid or expired access token.', 401);

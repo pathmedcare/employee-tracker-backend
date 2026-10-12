@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import apiRoutes from './routes/index.js';
+import { requestLogger } from './middlewares/logger.middleware.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,6 +18,9 @@ const app: Application = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Request Logger Middleware (Prints all incoming API calls in terminal)
+app.use(requestLogger);
 
 // Swagger API Documentation
 const swaggerDocument = YAML.load(path.join(__dirname, '../docs/openapi.yaml'));
@@ -31,8 +35,9 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// API Routes
+// API Routes Mounted for both /api/v1 and /auth/api formats
 app.use('/api/v1', apiRoutes);
+app.use('/auth/api', apiRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

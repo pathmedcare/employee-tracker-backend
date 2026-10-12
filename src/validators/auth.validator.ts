@@ -1,70 +1,115 @@
 import { body } from 'express-validator';
-import { ROLES } from '../utils/constants.js';
-
-export const registerValidator = [
-  body('name')
-    .trim()
-    .notEmpty()
-    .withMessage('Name is required')
-    .isLength({ min: 2 })
-    .withMessage('Name must be at least 2 characters long'),
-  body('email')
-    .trim()
-    .notEmpty()
-    .withMessage('Email is required')
-    .isEmail()
-    .withMessage('Must be a valid email address'),
-  body('password')
-    .notEmpty()
-    .withMessage('Password is required')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long'),
-  body('role')
-    .optional()
-    .isIn(Object.values(ROLES))
-    .withMessage(`Role must be one of: ${Object.values(ROLES).join(', ')}`),
-  body('phone')
-    .optional()
-    .isMobilePhone('any')
-    .withMessage('Must be a valid phone number')
-];
 
 export const loginValidator = [
-  body('email')
+  body('phone')
+    .optional()
+    .trim(),
+  body('identifier')
+    .optional()
+    .trim(),
+  body().custom((value) => {
+    if (!value.phone && !value.identifier && !value.email) {
+      throw new Error('Phone number is required');
+    }
+    if (!value.password && !value.otp) {
+      throw new Error('Either password or otp is required to login');
+    }
+    return true;
+  })
+];
+
+export const createUserValidator = [
+  body('first_name')
     .trim()
     .notEmpty()
-    .withMessage('Email is required')
+    .withMessage('first_name is required'),
+  body('last_name')
+    .trim()
+    .notEmpty()
+    .withMessage('last_name is required'),
+  body('phone')
+    .trim()
+    .notEmpty()
+    .withMessage('phone is required'),
+  body('email')
+    .optional()
+    .trim()
     .isEmail()
     .withMessage('Must be a valid email address'),
-  body('password')
-    .notEmpty()
-    .withMessage('Password is required')
+  body('role')
+    .optional()
+    .trim(),
+  body('designation')
+    .optional()
+    .trim()
 ];
 
-export const refreshValidator = [
-  body('refreshToken')
-    .notEmpty()
-    .withMessage('Refresh token is required')
-];
-
-export const forgotPasswordValidator = [
-  body('email')
+export const requestPasswordResetValidator = [
+  body('phone')
     .trim()
     .notEmpty()
-    .withMessage('Email is required')
-    .isEmail()
-    .withMessage('Must be a valid email address')
+    .withMessage('phone is required')
+];
+
+export const sendLoginOtpValidator = [
+  body('phone')
+    .optional()
+    .trim(),
+  body('identifier')
+    .optional()
+    .trim(),
+  body().custom((value) => {
+    if (!value.phone && !value.identifier) {
+      throw new Error('Phone or identifier is required');
+    }
+    return true;
+  })
+];
+
+export const verifyOtpValidator = [
+  body('phone')
+    .optional()
+    .trim(),
+  body('identifier')
+    .optional()
+    .trim(),
+  body().custom((value) => {
+    if (!value.phone && !value.identifier && !value.email) {
+      throw new Error('phone is required');
+    }
+    if (!value.otp && !value.password) {
+      throw new Error('Either otp or password is required');
+    }
+    return true;
+  })
+];
+
+export const verifyPasswordResetOtpValidator = [
+  body('phone')
+    .trim()
+    .notEmpty()
+    .withMessage('phone is required'),
+  body('otp')
+    .trim()
+    .notEmpty()
+    .withMessage('otp is required')
 ];
 
 export const resetPasswordValidator = [
-  body('resetToken')
+  body('new_password')
     .notEmpty()
-    .withMessage('Reset token is required'),
-  body('newPassword')
-    .notEmpty()
-    .withMessage('New password is required')
-    .isLength({ min: 6 })
-    .withMessage('New password must be at least 6 characters long')
+    .withMessage('new_password is required'),
+  body().custom((value, { req }) => {
+    const authHeader = req.headers?.authorization;
+    const hasBearer = authHeader && authHeader.startsWith('Bearer ');
+    if (!value.token && !value.reset_token && !hasBearer) {
+      throw new Error('token is required');
+    }
+    if (value.confirm_password && value.confirm_password !== value.new_password) {
+      throw new Error('confirm_password does not match new_password');
+    }
+    return true;
+  })
 ];
 
 export const deviceRegisterValidator = [

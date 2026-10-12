@@ -1,56 +1,18 @@
 openapi: 3.0.3
 info:
   title: PMC Tracker Backend API
-  description: Workforce attendance, GPS tracking, and task management REST API
+  description: Authentication, OTP Management, and User Administration REST API
   version: 1.0.0
 servers:
+  - url: http://localhost:5000/auth/api
+    description: Local Development Server (/auth/api format)
   - url: http://localhost:5000/api/v1
-    description: Local Development Server
+    description: Local Development Server (/api/v1 format)
 
 paths:
-  /auth/register:
-    post:
-      summary: Register a new user
-      tags:
-        - Authentication
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - name
-                - email
-                - password
-              properties:
-                name:
-                  type: string
-                  example: John Doe
-                email:
-                  type: string
-                  example: john.doe@example.com
-                password:
-                  type: string
-                  example: secret123
-                role:
-                  type: string
-                  enum: [Employee, Supervisor, Admin]
-                  example: Employee
-                phone:
-                  type: string
-                  example: "+1234567890"
-      responses:
-        '201':
-          description: User registered successfully
-        '400':
-          description: Email already registered
-        '422':
-          description: Validation error
-
   /auth/login:
     post:
-      summary: Authenticate user and return access & refresh tokens
+      summary: Log In
       tags:
         - Authentication
       requestBody:
@@ -60,26 +22,36 @@ paths:
             schema:
               type: object
               required:
-                - email
+                - phone
                 - password
               properties:
-                email:
+                phone:
                   type: string
-                  example: john.doe@example.com
+                  example: "1234567891"
                 password:
                   type: string
-                  example: secret123
+                  example: "Rahul@1212"
+                captchaToken:
+                  type: string
+                  nullable: true
+                  example: null
       responses:
         '200':
           description: Login successful
-        '401':
-          description: Invalid email or password
+          content:
+            application/json:
+              example:
+                success: true
+                message: "User logged in successfully"
+                access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                expires_in: 86400
 
-  /auth/refresh:
+  /users:
     post:
-      summary: Obtain a new access token using a refresh token
+      summary: Create User
       tags:
-        - Authentication
+        - Users
       requestBody:
         required: true
         content:
@@ -87,59 +59,136 @@ paths:
             schema:
               type: object
               required:
-                - refreshToken
-              properties:
-                refreshToken:
-                  type: string
-      responses:
-        '200':
-          description: Token refreshed successfully
-        '401':
-          description: Invalid or expired refresh token
-
-  /auth/logout:
-    post:
-      summary: Invalidate refresh token and logout
-      tags:
-        - Authentication
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                refreshToken:
-                  type: string
-      responses:
-        '200':
-          description: Logout successful
-
-  /auth/forgot-password:
-    post:
-      summary: Request password reset link / token
-      tags:
-        - Authentication
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
+                - first_name
+                - last_name
+                - phone
                 - email
+                - role
+                - designation
               properties:
+                first_name:
+                  type: string
+                  example: "Rahul"
+                last_name:
+                  type: string
+                  example: "Wale"
+                phone:
+                  type: string
+                  example: "9356853041"
                 email:
                   type: string
-                  example: john.doe@example.com
+                  example: "rahul@gmail.com"
+                role:
+                  type: string
+                  example: "Software Developer"
+                designation:
+                  type: string
+                  example: "Software Developer"
+      responses:
+        '201':
+          description: User created successfully
+
+  /auth/request-otp:
+    post:
+      summary: Request OTP
+      tags:
+        - Password Reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+              properties:
+                phone:
+                  type: string
+                  example: "9356853041"
       responses:
         '200':
-          description: Password reset token generated
+          description: Password reset OTP sent successfully
+          content:
+            application/json:
+              example:
+                success: true
+                message: "Password reset OTP sent successfully"
+                phone: "9356853041"
+                otpPhone: "9356853041"
+
+  /auth/verify-otp:
+    post:
+      summary: Verify OTP
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+                - otp
+              properties:
+                phone:
+                  type: string
+                  example: "9356853041"
+                otp:
+                  type: string
+                  example: "417620"
+                captchaToken:
+                  type: string
+                  nullable: true
+                  example: null
+      responses:
+        '200':
+          description: OTP verified and login successful
+          content:
+            application/json:
+              example:
+                success: true
+                message: "User logged in successfully"
+                access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                expires_in: 86400
+
+  /auth/verify-password-reset-otp:
+    post:
+      summary: Verify Password Reset OTP
+      tags:
+        - Password Reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+                - otp
+              properties:
+                phone:
+                  type: string
+                  example: "9356853041"
+                otp:
+                  type: string
+                  example: "417620"
+      responses:
+        '200':
+          description: OTP verified successfully
+          content:
+            application/json:
+              example:
+                success: true
+                message: "OTP verified successfully"
+                reset_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
   /auth/reset-password:
     post:
-      summary: Reset password with token
+      summary: Reset Password
       tags:
-        - Authentication
+        - Password Reset
       requestBody:
         required: true
         content:
@@ -147,57 +196,40 @@ paths:
             schema:
               type: object
               required:
-                - resetToken
-                - newPassword
+                - new_password
+                - confirm_password
+                - token
               properties:
-                resetToken:
+                new_password:
                   type: string
-                newPassword:
+                  example: "Rahul@123"
+                confirm_password:
                   type: string
-                  example: newSecret123
+                  example: "Rahul@123"
+                token:
+                  type: string
+                  example: "YOUR_RESET_TOKEN"
       responses:
         '200':
           description: Password reset successfully
+          content:
+            application/json:
+              example:
+                success: true
+                message: "Password reset successfully"
 
   /auth/me:
     get:
-      summary: Get current authenticated user profile
+      summary: Get Current User Profile
       tags:
         - Authentication
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Authenticated user profile retrieved
+          description: User profile retrieved successfully
         '401':
-          description: Unauthorized
-
-  /devices/register:
-    post:
-      summary: Register FCM token for push notifications
-      tags:
-        - Devices
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - fcm_token
-              properties:
-                fcm_token:
-                  type: string
-                  example: fcm_token_sample_abc123
-                platform:
-                  type: string
-                  enum: [android, ios, web]
-                  example: android
-      responses:
-        '201':
-          description: Device FCM token registered successfully
+          description: Unauthorized - No bearer token provided
 
 components:
   securitySchemes:

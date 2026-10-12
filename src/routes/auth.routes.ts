@@ -1,19 +1,22 @@
 import { Router } from 'express';
 import {
-  register,
   login,
-  refreshToken,
-  logout,
-  forgotPassword,
+  requestLoginOtp,
+  createUser,
+  requestPasswordReset,
+  verifyOtp,
+  verifyPasswordResetOtp,
   resetPassword,
   getMe,
   registerDevice
 } from '../controllers/auth.controller.js';
 import {
-  registerValidator,
   loginValidator,
-  refreshValidator,
-  forgotPasswordValidator,
+  sendLoginOtpValidator,
+  createUserValidator,
+  requestPasswordResetValidator,
+  verifyOtpValidator,
+  verifyPasswordResetOtpValidator,
   resetPasswordValidator,
   deviceRegisterValidator
 } from '../validators/auth.validator.js';
@@ -22,15 +25,28 @@ import { authenticate } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-// Public Authentication Routes
-router.post('/register', registerValidator, validate, register);
+// 1. Log In (Supports Password OR OTP)
 router.post('/login', loginValidator, validate, login);
-router.post('/refresh', refreshValidator, validate, refreshToken);
-router.post('/logout', logout);
-router.post('/forgot-password', forgotPasswordValidator, validate, forgotPassword);
+
+// 2. Sign Up / Create User
+router.post('/users', createUserValidator, validate, createUser);
+router.post('/users/client/:client_id', createUserValidator, validate, createUser);
+
+// Request OTP (Password Reset & OTP)
+router.post('/request-otp', requestPasswordResetValidator, validate, requestPasswordReset);
+router.post('/request-password-reset', requestPasswordResetValidator, validate, requestPasswordReset);
+router.post('/login-otp/send', sendLoginOtpValidator, validate, requestLoginOtp);
+
+// 4. Verify OTP (Login via OTP)
+router.post('/verify-otp', verifyOtpValidator, validate, verifyOtp);
+
+// 5. Verify Password Reset OTP
+router.post('/verify-password-reset-otp', verifyPasswordResetOtpValidator, validate, verifyPasswordResetOtp);
+
+// 6. Reset Password
 router.post('/reset-password', resetPasswordValidator, validate, resetPassword);
 
-// Protected Auth & Profile Routes
+// User Profile & Device Registration
 router.get('/me', authenticate, getMe);
 router.post('/devices/register', authenticate, deviceRegisterValidator, validate, registerDevice);
 

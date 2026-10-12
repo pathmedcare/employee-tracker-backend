@@ -8,7 +8,8 @@ export const authorize = (...allowedRoles: UserRole[]) => {
       return sendError(res, 'Unauthorized access', 401);
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    const userRole = req.user.role || '';
+    if (!allowedRoles.includes(userRole as any)) {
       return sendError(
         res,
         `Forbidden. Access restricted to roles: [${allowedRoles.join(', ')}]`,
